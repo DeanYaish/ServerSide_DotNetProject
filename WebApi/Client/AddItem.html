@@ -1,0 +1,462 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>הוספת פלייליסט</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link href="PlaylistStyle.css" rel="stylesheet" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+</head>
+
+<body class="w3-pale-blue">
+
+    <div class="w3-bar w3-black">
+        <a href="Management.html" class="w3-bar-item w3-button">Manager's Report</a>
+        <a href="AddItem.html" class="w3-bar-item w3-button">Add Album</a>
+    </div>
+
+
+    <div class="w3-left">
+        <table class="w3-table-all w3-hoverable" id="Items">
+            <thead>
+                <tr class="w3-light-grey">
+                    <th>Album's Id</th>
+                    <th>Album's name</th>
+
+                </tr>
+            </thead>
+        </table>
+    </div>
+
+    <div class="w3-right">
+
+        <div id="Albumdata">
+            <div class="w3-quarter">
+                <lablel>Album Name</lablel>
+                <input class="w3-input w3-border" id="AName" type="text" placeholder="Album Name" autocomplete="off" />
+            </div>
+            <div class="w3-quarter autocomplete">
+                <lablel>Artist</lablel>
+                <input class="w3-input w3-border" id="Artist" type="text" placeholder="Artist Name" autocomplete="off" />
+            </div>
+            <div class="w3-quarter">
+                <lablel>No of Songs</lablel>
+                <input class="w3-input w3-border" id="amount" type="text" placeholder="Amount Of Songs" autocomplete="off" />
+            </div>
+            <div class="w3-quarter buttom">
+                <button class="w3-button w3-indigo w3-round w3-hover-black" onclick="Submit()">Submit</button>
+            </div>
+        </div>
+
+
+
+        <div id="form" class="w3-row-padding" style="visibility:hidden">
+
+        </div>
+
+    </div>
+
+    <div id="id01" class="w3-modal">
+        <div class="w3-modal-content">
+            <div class="w3-container">
+                <span onclick="document.getElementById('id01').style.display='none'"
+                      class="w3-button w3-display-topright">&times;</span>
+                <p id="p1">Some text in the Modal..</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+   
+        
+        var Artists = [];
+        var Genres = [];
+        var MediaTypes = [];
+
+        var SongNames = [];
+        var Prices = [];
+        var SongGenres = [];
+        var Types = [];
+        var Bytes = [];
+        var Composers = [];
+        var Milliseconds = [];
+
+        var Tracks = [];
+
+        var amount;
+
+
+        var Album =
+        {
+            ArtistName: "",
+            Title: "",
+        };
+
+
+
+        $(document).ready(function () {
+
+            $.ajax({
+                dataType: "json",			                //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/albumbyartist/",			            //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				              //סוג הפעולה
+                //data:  JSON.stringify(products),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    for (var i = 0; i < data.length; i++) {
+                        $("#Items").append(CreateList(data[i]));
+                    }
+
+
+                },
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+                }
+            });
+        })
+
+        $(document).ready(init);
+
+        function init() {
+            $.ajax({
+                dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/artist/",			    //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				            //סוג הפעולה
+                //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    for (let i = 0; i < data.length; i++) {
+                        Artists.push(data[i].Name);
+                    }
+                },
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+
+                }
+            });
+
+            $.ajax({
+                dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/genre/",			    //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				            //סוג הפעולה
+                //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    for (let i = 0; i < data.length; i++) {
+                        Genres.push(data[i].Name);
+                    }
+                },
+
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+                }
+
+            });
+
+            $.ajax({
+                dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/media/",			    //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				            //סוג הפעולה
+                //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    for (let i = 0; i < data.length; i++) {
+                        MediaTypes.push(data[i].Name);
+                    }
+                },
+
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+                }
+
+            });
+
+        }
+
+        function Submit() {
+            getInputValues();
+        }
+
+        function getInputValues() {
+            Album.ArtistName = $("#Artist").val();
+            amount = $("#amount").val();
+            Album.Title = $("#AName").val();
+
+            for (let i = 0; i < (parseInt(amount)) * 2; i += 2) {
+                $("#form").append(CreateTextfield(i));
+                autocomplete(document.getElementById(i), Genres);
+                autocomplete(document.getElementById((i + 1)), MediaTypes);
+
+            }
+            $("#form").append(createButton());
+            document.getElementById("form").style.visibility = "visible";
+        }
+
+        function Add()
+        {
+            GetValues()
+            Tracks = [];
+
+            for (let i = 0; i < SongNames.length; i++)
+            {
+                var typetemp;
+                var genretemp;
+
+                if (MediaTypes.indexOf(Types[i]) != -1) { typetemp = (MediaTypes.indexOf(Types[i]) + 1); }
+                else {
+                    alert("Media Type is invalid! Please use the list given by database!");
+                    return;
+                };
+                if (Genres.indexOf(SongGenres[i]) != -1) { genretemp = (Genres.indexOf(SongGenres[i]) + 1); }
+                else {
+                    alert("Genre is invalid! Please use the list given by database!");
+                    return;
+                };
+
+
+                var track =
+                {
+                    Name: SongNames[i],
+                    UnitPrice: Prices[i],
+                    GenreId: genretemp,
+                    Bytes: Bytes[i],
+                    Milliseconds: Milliseconds[i],
+                    Composer: Composers[i],
+                    MediaTypeId: typetemp,
+                }
+                
+                Tracks.push(track);
+            }
+
+            AddSongs();
+            
+        }
+
+        function AddSongs() 
+        {
+            
+                $.ajax({
+                    dataType: "json",			                //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                    url: "/api/tracksbyalbum/" + Album.Title + "/" + Album.ArtistName,			            //הכתובת לשרת ולפונקציה
+                    contentType: "application/json",	   //סוג הנתונים שאנחנו שולחים לשרת
+                    type: "POST",				              //סוג הפעולה
+                    data: JSON.stringify(Tracks),			  //הנתונים עצמם שאנחנו שולחים
+                    success: function (data) {
+                        //פונקציה  שתופעל לאחר הצלחה
+                        swal("Good job!", "Album named " + Album.Title + " has been addded to the database", "success");
+                        console.log(data);
+
+                    },
+                    error: function (err) {
+                        //פונקציה שתופעל במקרה של שגיאה
+                        sweetAlert("Oops...", "Something went wrong.. album was not added", "error");
+                        console.log(err);
+                    }
+                });
+
+           
+        }
+
+
+
+        function GetValues()
+        {
+            ReleaseLists();
+
+            document.querySelectorAll('.SName').forEach(function (el) {
+                SongNames.push(el.value)
+            });
+            document.querySelectorAll('.Price').forEach(function (el) {
+                Prices.push(el.value)
+            });
+            document.querySelectorAll('.Genre').forEach(function (el) {
+                SongGenres.push(el.value)
+            });
+            document.querySelectorAll('.Type').forEach(function (el) {
+                Types.push(el.value)
+            });
+            document.querySelectorAll('.Composer').forEach(function (el) {
+                Composers.push(el.value)
+            });
+            document.querySelectorAll('.Milliseconds').forEach(function (el) {
+                Milliseconds.push(el.value)
+            });
+            document.querySelectorAll('.Bytes').forEach(function (el) {
+                Bytes.push(el.value)
+            });
+
+        }
+
+        function ReleaseLists()
+        {
+             SongNames = [];
+             Prices = [];
+             SongGenres = [];
+             Types = [];
+             Bytes = [];
+             Composers = [];
+             Milliseconds = [];
+        }
+
+        function CreateList(album) {
+
+            return `<tr>
+                            <td>${album.AlbumId}</td>
+                            <td class="Name">${album.Title}</td>
+                            </tr>`
+        }
+        function CreateTextfield(i) {
+            return `<div class = "w3-row-padding">
+                            <div class="w3-col" >
+                            <lablel>Song Name</lablel>
+                            <input class="w3-input w3-border SName" type="text" placeholder="Song Name" autocomplete="off" />
+                            </div>
+                            <div class="w3-col">
+                            <lablel>Song Price</lablel>
+                            <input class="w3-input w3-border Price" type="text" placeholder="Song Price" autocomplete="off" />
+                            </div>
+                            <div class="w3-col autocomplete">
+                            <lablel>Genre Name</lablel>
+                            <input class="w3-input w3-border Genre" id="${i}" type="text" placeholder="Genre Name" autocomplete="off" />
+                            </div>
+                            <div class="w3-col autocomplete" >
+                            <lablel>MediaType</lablel>
+                            <input class="w3-input w3-border Type" id="${(i + 1)}" type="text" placeholder="Media Type" autocomplete="off" />
+                            </div>
+                            <div class="w3-col" >
+                            <lablel>Composer</lablel>
+                            <input class="w3-input w3-border Composer" type="text" placeholder="Composer" autocomplete="off" />
+                            </div>
+                            <div class="w3-col" >
+                            <lablel>Song Time</lablel>
+                            <input class="w3-input w3-border Milliseconds" type="text" placeholder="Milliseconds" autocomplete="off" />
+                            </div>
+                            <div class="w3-col" >
+                            <lablel>Song Size</lablel>
+                            <input class="w3-input w3-border Bytes" type="text" placeholder="Bytes" autocomplete="off" />
+                            </div>
+
+                        </div>`
+        }
+        function createButton() {
+            return `<div class="w3-content" id="bottomdiv" style="max-width:250px"><button class="w3-button w3-indigo w3-round w3-hover-black" onclick="Add()">Add Album</button>`
+        }
+        function autocomplete(inp, arr) {
+            /*the autocomplete function takes two arguments,
+             the text field element and an array of possible autocompleted values:*/
+            var currentFocus;
+            /*execute a function when someone writes in the text field:*/
+            inp.addEventListener("input", function (e) {
+                var a, b, i, val = this.value;
+                /*close any already open lists of autocompleted values*/
+                closeAllLists();
+                if (!val) { return false; }
+                currentFocus = -1;
+                /*create a DIV element that will contain the items (values):*/
+                a = document.createElement("DIV");
+                a.setAttribute("id", this.id + "autocomplete-list");
+                a.setAttribute("class", "autocomplete-items");
+                /*append the DIV element as a child of the autocomplete container:*/
+                this.parentNode.appendChild(a);
+                /*for each item in the array...*/
+                for (i = 0; i < arr.length; i++) {
+                    /*check if the item starts with the same letters as the text field value:*/
+                    if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+                        /*create a DIV element for each matching element:*/
+                        b = document.createElement("DIV");
+                        /*make the matching letters bold:*/
+                        b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                        b.innerHTML += arr[i].substr(val.length);
+                        /*insert a input field that will hold the current array item's value:*/
+                        b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+                        /*execute a function when someone clicks on the item value (DIV element):*/
+                        b.addEventListener("click", function (e) {
+                            /*insert the value for the autocomplete text field:*/
+                            inp.value = this.getElementsByTagName("input")[0].value;
+                            /*close the list of autocompleted values,*
+                            (or any other open lists of autocompleted values:*/
+                            closeAllLists();
+                        });
+                        a.appendChild(b);
+                    }
+                }
+            });
+            /*execute a function presses a key on the keyboard:*/
+            inp.addEventListener("keydown", function (e) {
+                var x = document.getElementById(this.id + "autocomplete-list");
+                if (x) x = x.getElementsByTagName("div");
+                if (e.keyCode == 40) {
+                    /*If the arrow DOWN key is pressed,*
+                    increase the currentFocus variable:*/
+
+                    currentFocus++;
+                    /*and and make the current item more visible:*/
+                    addActive(x);
+                } else if (e.keyCode == 38) { //up
+                    /*If the arrow UP key is pressed,
+                    decrease the currentFocus variable:*/
+                    currentFocus--;
+                    /*and and make the current item more visible:*/
+                    addActive(x);
+                } else if (e.keyCode == 13) {
+                    /*If the ENTER key is pressed, prevent the form from being submitted,*/
+                    e.preventDefault();
+                    if (currentFocus > -1) {
+                        /*and simulate a click on the "active" item:*/
+                        if (x) x[currentFocus].click();
+                    }
+                }
+            });
+            function addActive(x) {
+                /*a function to classify an item as "active":*/
+                if (!x) return false;
+                /*start by removing the "active" class on all items:*/
+                removeActive(x);
+                if (currentFocus >= x.length) currentFocus = 0;
+                if (currentFocus < 0) currentFocus = (x.length - 1);
+                /*add class "autocomplete-active":*/
+                x[currentFocus].classList.add("autocomplete-active");
+            }
+            function removeActive(x) {
+                /*a function to remove the "active" class from all autocomplete items:*/
+                for (var i = 0; i < x.length; i++) {
+                    x[i].classList.remove("autocomplete-active");
+                }
+            }
+            function closeAllLists(elmnt) {
+                /*close all autocomplete lists in the document,
+                except the one passed as an argument:*/
+                var x = document.getElementsByClassName("autocomplete-items");
+                for (var i = 0; i < x.length; i++) {
+                    if (elmnt != x[i] && elmnt != inp) {
+                        x[i].parentNode.removeChild(x[i]);
+                    }
+                }
+            }
+
+            /*execute a function when someone clicks in the document:*/
+            document.addEventListener("click", function (e) {
+                closeAllLists(e.target);
+            });
+        }
+        autocomplete(document.getElementById("Artist"), Artists);
+
+
+
+    </script>
+
+
+</body>
+</html>
+

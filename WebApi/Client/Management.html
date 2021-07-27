@@ -1,0 +1,540 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>דו"ח מנהלים</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link href="ReportStyle.css" rel="stylesheet" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+</head>
+<body class="w3-pale-blue">
+
+    <div class="w3-bar w3-black">
+        <a href="Management.html" class="w3-bar-item w3-button">Manager's Report</a>
+        <a href="AddItem.html" class="w3-bar-item w3-button">Add Album</a>
+    </div>
+
+
+    <div class="w3-row-padding">
+
+        <div class="w3-third">
+            <lablel>Artist</lablel>
+            <input class="w3-input w3-border" id="Artist" type="text" placeholder="Artist" autocomplete="off" />
+        </div>
+        <div class="w3-third">
+            <lablel>Genre</lablel>
+            <input class="w3-input w3-border" id="Genre" type="text" placeholder="Genre" autocomplete="off" />
+        </div>
+        <div class="w3-third">
+            <button class="w3-button w3-indigo w3-round w3-hover-black" onclick="Search()">Search</button>
+            <button class="w3-button w3-indigo w3-round w3-hover-black" onclick="Clean()">CleanAll</button>
+        </div>
+
+    </div>
+
+    <div class="w3-center w3-display-middle">
+        <table class="w3-table-all w3-hoverable" id="Items">
+            <thead>
+                <tr class="w3-light-grey">
+                    <th>Album's Id</th>
+                    <th>Album's name</th>
+                    <th>Artist</th>
+                    <th>Genre</th>
+                    <th>Number of songs</th>
+                    <th>Total Income from album</th>
+                </tr>
+            </thead>
+        </table>
+        <div class="loader">
+
+
+        </div>
+
+    </div>
+
+    <div class="bottom" id="SongTable" style="visibility:hidden">
+        <table class="w3-table-all" id="Songs">
+            <thead>
+                <tr class="w3-light-grey">
+                    <th>Song's Id</th>
+                    <th>Song's name</th>
+                    <th>Song's Price</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+    <script>
+        
+
+
+        var Genres = [];
+        var Artists = [];
+        let Artist = null;
+        let Tracks = [];
+        let Albums = [];
+        let Genre = null;
+        let index = 0;
+        let Albums_Total = [];
+
+
+        $(document).ready(init);
+
+
+        function init() {
+
+            $(".loader").hide();
+
+            $.ajax({
+                dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/artist",			    //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				            //סוג הפעולה
+                //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    for (let i = 0; i < data.length; i++) {
+                        Artists.push(data[i].Name);
+                    }
+                    console.log(Artists);
+                },
+
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+
+                }
+            });
+
+            $.ajax({
+                dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/genre",			    //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				            //סוג הפעולה
+                //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    for (let i = 0; i < data.length; i++) {
+                        Genres.push(data[i].Name);
+                    }
+                    console.log(Genres);
+                },
+
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+
+                }
+            });
+        }
+
+        function Clean() {
+            $('#Items').children('tr').remove();
+            $("#Artist").val("");
+            $("#Genre").val("");
+            Tracks = [];
+            Albums = [];
+            Albums_Total = [];
+            index = 0;
+            document.getElementById("Songs").style.visibility = "hidden";
+            $(".loader").hide();
+        }
+
+        function Search()
+        {
+            $(".loader").show();
+            getInputValues();
+
+            if (Artist == "" && Genre == "")
+            {
+
+                $.ajax({
+                    dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                    url: "/api/albumbyartist/",			    //הכתובת לשרת ולפונקציה
+                    contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                    type: "GET",				            //סוג הפעולה
+                    async: false,
+                    //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+
+                    success: function (data) {
+                        //פונקציה  שתופעל לאחר הצלחה
+                        for (let i = 0; i < data.length; i++) {
+
+                            getSongsInfo(data[i]);
+                            Albums.push(data[i]);
+                        }
+
+                        Tracks.sort((a, b) => (a[0].AlbumId > b[0].AlbumId) ? 1 : -1);
+
+                        for (let j = 0; j < Albums.length; j++) {
+                            $("#Items").append(CreateElement(Albums[j], Tracks[j], "%", "%", Albums_Total[j]));
+                        }
+                        $(".loader").hide();
+                    },
+                    error: function (err) {
+                        //פונקציה שתופעל במקרה של שגיאה
+                        console.log(err);
+
+                    }
+                });
+
+            }
+            else {
+
+                if (Artist != "") {
+
+                    $.ajax({
+                        dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                        url: "/api/artist/" + Artist,			    //הכתובת לשרת ולפונקציה
+                        contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                        type: "GET",				            //סוג הפעולה
+                        //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                        success: function (data) {
+                            //פונקציה  שתופעל לאחר הצלחה
+                            getAlbumsByArtist(data.ArtistId);
+                            $(".loader").hide();
+                        },
+
+                        error: function (err) {
+                            //פונקציה שתופעל במקרה של שגיאה
+                            console.log(err);
+                        }
+                    });
+
+
+                }
+                else {
+
+                    $.ajax({
+                        dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                        url: "/api/genre/" + Genre,			    //הכתובת לשרת ולפונקציה
+                        contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                        type: "GET",				            //סוג הפעולה
+                        //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                        success: function (data) {
+                            //פונקציה  שתופעל לאחר הצלחה
+                            getTracksByGenre(data.GenreId);
+                            $(".loader").hide();
+                        },
+
+                        error: function (err) {
+                            //פונקציה שתופעל במקרה של שגיאה
+                            console.log(err);
+
+                        }
+                    });
+
+                }
+            }
+        }
+
+        function getAlbumsByArtist(Id) {
+
+            $.ajax({
+                dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/albumbyartist/" + Id,			    //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				            //סוג הפעולה
+                async: false,
+                //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    console.log(data);
+                    for (let i = 0; i < data.length; i++) {
+
+                        getSongsInfo(data[i]);
+
+                        Albums.push(data[i]);
+                    }
+
+                    Tracks.sort((a, b) => (a[0].AlbumId > b[0].AlbumId) ? 1 : -1);
+
+                    for (let j = 0; j < Albums.length; j++) {
+                        var color = Checkstats(Albums_Total[j], Tracks[j].length)
+                        $("#Items").append(CreateElement(Albums[j], Tracks[j], Artist, "%", Albums_Total[j], color));
+                    }
+
+                },
+
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+                }
+            });
+
+        }
+
+        function getTracksByGenre(Id) {
+
+            $.ajax({
+                dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/tracksbygenre/" + Id,			    //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				            //סוג הפעולה
+                async: false,
+                //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    console.log(data);
+                    for (let i = 0; i < data.length; i++) {
+                        getAlbumInfo(data[i].AlbumId);
+                    }
+
+                    Albums.sort((a, b) => (a.AlbumId > b.AlbumId) ? 1 : -1);
+
+                    for (let j = 0; j < Albums.length; j++) {
+                        getSongsInfo(Albums[j]);
+                        var color = Checkstats(Albums_Total[j], Tracks[j].length)
+                        $("#Items").append(CreateElement(Albums[j], Tracks[j], "%", Genre, Albums_Total[j], color));
+                    }
+                    $(".loader").hide();
+                },
+
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+                }
+            });
+
+        }
+
+        function getSongsInfo(Album) {
+
+            $.ajax({
+                dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/tracksbyalbum/" + (Album.AlbumId),			    //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				            //סוג הפעולה
+                async: false,
+                //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    console.log(data);
+                    var total = 0;
+                    for (let i = 0; i < data.length; i++) {
+                        if (data[i].invoice.length > 0) {
+                            for (let j = 0; j < data[i].invoice.length; j++) {
+                                total += (data[i].invoice[j].UnitPrice * data[i].invoice[j].Quantity);
+                            }
+                        }
+                    }
+
+
+                    Albums_Total[index] = total.toFixed(3)
+                    Tracks.push(data);
+                    index++;
+                },
+
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+                }
+            });
+
+        }
+
+
+        function getAlbumInfo(AlbumId) {
+
+            $.ajax({
+                dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/albumbytrack/" + AlbumId,			    //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				            //סוג הפעולה
+                async: false,
+                //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    if (data != null) {
+                        if (Albums.find(x => x.AlbumId == data.AlbumId)) {
+                            return;
+                        }
+                        Albums.push(data)
+                    }
+
+
+                },
+
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+                }
+            });
+
+        }
+
+        $(document).on('click', '#rows >td', function (e) {
+
+            var tr = e.target.parentNode;
+            var id = tr.firstElementChild.innerHTML;
+
+            $('#Songs').children('tr').remove();
+
+
+            $.ajax({
+                dataType: "json",			     //סוג הנתונים שאנחנו מצפים לקבל מהשרת
+                url: "/api/tracksbyalbum/" + (id),			    //הכתובת לשרת ולפונקציה
+                contentType: "application/json",		   //סוג הנתונים שאנחנו שולחים לשרת
+                type: "GET",				            //סוג הפעולה
+                async: false,
+                //data: JSON.stringify({}),			  //הנתונים עצמם שאנחנו שולחים
+                success: function (data) {
+                    //פונקציה  שתופעל לאחר הצלחה
+                    console.log(data);
+                    for (let i = 0; i < data.length; i++) {
+                        $("#Songs").append(CreateSong(data[i]));
+                    }
+
+                    document.getElementById("Songs").style.visibility = "visible";
+
+                },
+
+                error: function (err) {
+                    //פונקציה שתופעל במקרה של שגיאה
+                    console.log(err);
+                }
+            });
+
+        });
+
+        function CreateElement(album, song, Name, genre, total, color) {
+            return `<tr id="rows" style="background-color:${color}">
+                                    <td>${album.AlbumId}</td>
+                                    <td>${album.Title}</td>
+                                    <td>${Name}</td>
+                                    <td>${genre}</td>
+                                    <td>${song.length}</td>
+                                    <td>${total}</td>
+                                    </tr>`;
+
+        }
+
+        function CreateSong(song) {
+            return `<tr>
+                                   <td>${song.TrackId}</td>
+                                   <td>${song.Name}</td>
+                                   <td>${song.UnitPrice}</td>
+                                    </tr>`;
+
+        }
+
+        function getInputValues() {
+            Artist = $("#Artist").val();
+            Genre = $("#Genre").val();
+        }
+
+        function Checkstats(price, length) {
+
+            if ((price / length > 0.7) && (price / length < 0.9)) { return "LightGray"; }
+            else {
+                if ((price / length > 0.4) && (price / length < 0.7)) { return "CornflowerBlue"; }
+                else return "Yellow";
+            }
+
+        }
+
+        function autocomplete(inp, arr) {
+            /*the autocomplete function takes two arguments,
+            the text field element and an array of possible autocompleted values:*/
+            var currentFocus;
+            /*execute a function when someone writes in the text field:*/
+            inp.addEventListener("input", function (e) {
+                var a, b, i, val = this.value;
+                /*close any already open lists of autocompleted values*/
+                closeAllLists();
+                if (!val) { return false; }
+                currentFocus = -1;
+                /*create a DIV element that will contain the items (values):*/
+                a = document.createElement("DIV");
+                a.setAttribute("id", this.id + "w3-third-list");
+                a.setAttribute("class", "w3-third-items");
+                /*append the DIV element as a child of the autocomplete container:*/
+                this.parentNode.appendChild(a);
+                /*for each item in the array...*/
+                for (i = 0; i < arr.length; i++) {
+                    /*check if the item starts with the same letters as the text field value:*/
+                    if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+                        /*create a DIV element for each matching element:*/
+                        b = document.createElement("DIV");
+                        /*make the matching letters bold:*/
+                        b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                        b.innerHTML += arr[i].substr(val.length);
+                        /*insert a input field that will hold the current array item's value:*/
+                        b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+                        /*execute a function when someone clicks on the item value (DIV element):*/
+                        b.addEventListener("click", function (e) {
+                            /*insert the value for the autocomplete text field:*/
+                            inp.value = this.getElementsByTagName("input")[0].value;
+                            /*close the list of autocompleted values,
+                            (or any other open lists of autocompleted values:*/
+                            closeAllLists();
+                        });
+                        a.appendChild(b);
+                    }
+                }
+            });
+            /*execute a function presses a key on the keyboard:*/
+            inp.addEventListener("keydown", function (e) {
+                var x = document.getElementById(this.id + "w3-third-list");
+                if (x) x = x.getElementsByTagName("div");
+                if (e.keyCode == 40) {
+                    /*If the arrow DOWN key is pressed,
+                    increase the currentFocus variable:*/
+                    currentFocus++;
+                    /*and and make the current item more visible:*/
+                    addActive(x);
+                } else if (e.keyCode == 38) { //up
+                    /*If the arrow UP key is pressed,
+                    decrease the currentFocus variable:*/
+                    currentFocus--;
+                    /*and and make the current item more visible:*/
+                    addActive(x);
+                } else if (e.keyCode == 13) {
+                    /*If the ENTER key is pressed, prevent the form from being submitted,*/
+                    e.preventDefault();
+                    if (currentFocus > -1) {
+                        /*and simulate a click on the "active" item:*/
+                        if (x) x[currentFocus].click();
+                    }
+                }
+            });
+            function addActive(x) {
+                /*a function to classify an item as "active":*/
+                if (!x) return false;
+                /*start by removing the "active" class on all items:*/
+                removeActive(x);
+                if (currentFocus >= x.length) currentFocus = 0;
+                if (currentFocus < 0) currentFocus = (x.length - 1);
+                /*add class "autocomplete-active":*/
+                x[currentFocus].classList.add("w3-third-active");
+            }
+            function removeActive(x) {
+                /*a function to remove the "active" class from all autocomplete items:*/
+                for (var i = 0; i < x.length; i++) {
+                    x[i].classList.remove("w3-third-active");
+                }
+            }
+            function closeAllLists(elmnt) {
+                /*close all autocomplete lists in the document,
+                except the one passed as an argument:*/
+                var x = document.getElementsByClassName("w3-third-items");
+                for (var i = 0; i < x.length; i++) {
+                    if (elmnt != x[i] && elmnt != inp) {
+                        x[i].parentNode.removeChild(x[i]);
+                    }
+                }
+            }
+
+            /*execute a function when someone clicks in the document:*/
+            document.addEventListener("click", function (e) {
+                closeAllLists(e.target);
+            });
+        }
+
+        autocomplete(document.getElementById("Artist"), Artists);
+        autocomplete(document.getElementById("Genre"), Genres);
+
+    </script>
+</body>
+</html>
